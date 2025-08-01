@@ -8,6 +8,7 @@ function MyTrips() {
   const [tripData, setTripData] = useState([]);
   const navigate = useNavigate();
   const [tripPhotos, setTripPhotos] = useState({});
+  const API_KEY = import.meta.env.VITE_APP_GOOGLE_PLACE_API_KEY
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -32,7 +33,7 @@ function MyTrips() {
 
             if (rawPhotoRef) {
               const photoRef = rawPhotoRef.split("/").pop();
-              const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=AIzaSyDT8IXeHxr9_MPjK9AJnV6vafqhe2rkLv4`;
+              const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${API_KEY}`;
               newPhotoMap[tripDetail.userSelection.location] = photoUrl;
               console.log("Fetched photo URL:", photoUrl);
             }
