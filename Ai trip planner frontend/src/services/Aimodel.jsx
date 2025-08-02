@@ -60,7 +60,7 @@ Your task is to return a valid JSON object that matches this format:
 
 ${example}
 
-Generate Travel plan for Location : ${location}, for ${days} for ${traveler }with a ${budget} budget , Give me a Hotel Options (the hotels must be best according to given ${budget}) list with hotelName , hotelAddress , Price , HotelImageurl , geoCoordinates , rating (out of 5) and description and suggest itinerary with PlaceName , PlaceDetails , PlaceImageUrl  , geoCoordinates , ticketPricing , rating , timeTravel each of the location for ${days} with each day plan with best time to visit ( just say morning  afternoon or evening ).
+Generate Travel plan for Location : ${location}, for ${days} days for ${traveler }with a ${budget} budget , Give me a Hotel Options (the hotels must be best according to given ${budget}) list with hotelName , hotelAddress , Price , HotelImageurl , geoCoordinates , rating (out of 5) and description and suggest itinerary with PlaceName , PlaceDetails , PlaceImageUrl  , geoCoordinates , ticketPricing , rating , timeTravel each of the location for ${days} days with each day plan with best time to visit ( just say morning  afternoon or evening ).
 in Json format , no extra commentary not even a single word  only JSON data, don't add any [3,7] or website reference like this i need to use this response no need for this.
 Output strictly valid JSON with no markdown, no commentary, and no \`\`\`json fences.
 `.trim();
@@ -76,7 +76,7 @@ Output strictly valid JSON with no markdown, no commentary, and no \`\`\`json fe
         temperature: 0, // Avoid hallucination
         topK: 1,
         topP: 1,
-        maxOutputTokens: 4096
+        maxOutputTokens: 2500
       }
     });
 

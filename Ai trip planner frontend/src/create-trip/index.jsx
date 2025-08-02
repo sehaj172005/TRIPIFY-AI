@@ -79,7 +79,7 @@ function Createtrip() {
       console.log(Tripdetails);
       const user = JSON.parse(localStorage.getItem("user"));
 
-      const res = await axios.post("http://localhost:3000/trip/create", {
+      const res = await axios.post("https://tripify-ai-backend.onrender.com/trip/create", {
         userSelection: formData,
         Tripdata: Tripdetails,
         email: user?.email,

@@ -16,7 +16,7 @@ function Viewtrip() {
     const fetchTrip = async () => {
       try {
         const tripDetails = await axios.get(
-          `http://localhost:3000/trip/view-trip/${tripId}`
+          `https://tripify-ai-backend.onrender.com/trip/view-trip/${tripId}`
         );
         setTripData(tripDetails.data);
         console.log("data fetched.", tripDetails.data);
