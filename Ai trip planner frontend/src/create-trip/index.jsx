@@ -26,6 +26,7 @@ function Createtrip() {
   const [loading, setLoading] = useState(false);
   const [jsonData, setJsonData] = useState();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [tripLoadingDialog, setTripLoadingDialog] = useState(false);
   const Navigate = useNavigate();
 
   const handlePlaceSelect = (name, value) => {
@@ -43,6 +44,7 @@ function Createtrip() {
   }, [formData]);
 
   const OnGenerateTrip = async () => {
+    setTripLoadingDialog(true);
     setLoading(true);
     if (formData?.NoofDays > 7) {
       toast("No. of Days can't be more than 6.");
@@ -63,11 +65,13 @@ function Createtrip() {
     if (!user) {
       setDialogOpen(true);
       setLoading(false);
+      setTripLoadingDialog(false);
       return;
     }
 
     try {
       setLoading(true);
+      setTripLoadingDialog(true);
       const Tripdetails = await getTravelPlan({
         location: formData.location || "",
         days: formData.NoofDays,
@@ -79,11 +83,14 @@ function Createtrip() {
       console.log(Tripdetails);
       const user = JSON.parse(localStorage.getItem("user"));
 
-      const res = await axios.post("https://tripify-ai-backend.onrender.com/trip/create", {
-        userSelection: formData,
-        Tripdata: Tripdetails,
-        email: user?.email,
-      });
+      const res = await axios.post(
+        "https://tripify-ai-backend.onrender.com/trip/create",
+        {
+          userSelection: formData,
+          Tripdata: Tripdetails,
+          email: user?.email,
+        }
+      );
       Navigate("/view-trip/" + res.data._id);
     } catch (e) {
       toast.error("There was an error generating trip.");
@@ -142,6 +149,18 @@ function Createtrip() {
             <FcGoogle />
             Sign in with Google
           </Button>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tripLoadingDialog} onOpenChange={setTripLoadingDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Trip Loading...</DialogTitle>
+            <DialogDescription>
+              Your Trip is being generated.Please wait it might take 30-60
+              seconds.
+            </DialogDescription>
+          </DialogHeader>
         </DialogContent>
       </Dialog>
 
