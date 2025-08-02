@@ -4,9 +4,9 @@ import { useEffect } from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import InformationSection from '../components/InformationSection'
-import Hotels from '../components/hotels';
-import PlacesToVisit from '../components/PlacesToVisit';
+import InformationSection from '../components/InformationSection.jsx'
+import Hotels from '../components/Hotels.jsx'
+import PlacesToVisit from '../components/PlacesToVisit.jsx';
 
 function Viewtrip() {
     const {tripId} = useParams();
