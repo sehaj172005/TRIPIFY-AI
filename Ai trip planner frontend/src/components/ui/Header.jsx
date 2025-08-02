@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 function Header() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const Navigate = useNavigate()
 
   const user = localStorage.getItem("user");
   const profile = user ? JSON.parse(user) : null;
@@ -75,15 +76,18 @@ function Header() {
         } md:block`}
       >
         <div className="flex flex-col md:flex-row gap-4 mt-4 md:mt-0 md:ml-auto items-center">
-          <a href="/create-trip">
-            <Button className="w-full md:w-auto">Create Trip</Button>
-          </a>
-
+         
+            <Button className="w-full md:w-auto" onClick={() => {
+              Navigate("/create-trip")
+            }}>Create Trip</Button>
+          
           {profile ? (
             <>
-              <a href={`/my-trips/${profile.email}`}>
-                <Button className="w-full md:w-auto">View your Trips</Button>
-              </a>
+            
+                <Button className="w-full md:w-auto" onClick ={() => {
+                  Navigate("/my-trips/"+profile.email)
+                }}>View your Trips</Button>
+             
 
               <Popover>
                 <PopoverTrigger>

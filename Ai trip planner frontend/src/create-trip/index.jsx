@@ -79,7 +79,6 @@ function Createtrip() {
         budget: formData.Budget,
         traveler: formData.traveler,
       });
-      toast.success("TRIP GENERATED");
       setJsonData(Tripdetails);
       console.log(Tripdetails);
       const user = JSON.parse(localStorage.getItem("user"));
@@ -160,8 +159,8 @@ function Createtrip() {
           <DialogHeader>
             <DialogTitle>Trip Loading...</DialogTitle>
             <DialogDescription>
-              Your Trip is being generated.Please wait it might take 30-60
-              seconds.
+              Your Trip is being generated.Please wait, It might take 30-60
+              seconds.😊
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
