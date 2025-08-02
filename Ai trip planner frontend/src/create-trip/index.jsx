@@ -20,6 +20,7 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Header from "../components/ui/Header";
 function Createtrip() {
   const [selectedPlace, setSelectedPlace] = useState("null");
   const [formData, setFormData] = useState({});
@@ -132,6 +133,8 @@ function Createtrip() {
   return (
     <>
       {/* Dialog */}
+
+      <Header />
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>

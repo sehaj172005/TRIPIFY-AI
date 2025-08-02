@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { GetPlaceDetails } from "../../services/GloabalApi";
+import Header from "../../components/ui/Header";
 
 function MyTrips() {
   const { email } = useParams();
@@ -52,6 +53,8 @@ function MyTrips() {
   }, [email]);
 
   return (
+    <>
+    <Header />
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">My Trips</h2>
 
@@ -82,6 +85,7 @@ function MyTrips() {
         </div>
       )}
     </div>
+    </>
   );
 }
 
