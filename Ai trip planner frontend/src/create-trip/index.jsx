@@ -61,30 +61,35 @@ function Createtrip() {
       setLoading(false);
       return;
     }
-  
-    const user = localStorage.getItem("user");
+
+    const user = JSON.parse(localStorage.getItem("user"));
     if (!user) {
       setDialogOpen(true);
       setLoading(false);
       setTripLoadingDialog(false);
       return;
     }
-  
+
     try {
       setLoading(true);
       setTripLoadingDialog(true);
-  
-      // Log payload for debugging
+
+      const aiResponse = await getTravelPlan(formData);
+
+      // If AI returns string, parse it
+      // const aiResponse = JSON.parse(await getTravelPlan(formData));
+
+      // STEP 2: Prepare Payload
       const payload = {
         userSelection: formData,
-        // Tripdata: Tripdetails, // <-- REMOVE THIS LINE
-        email: user?.email,
+        Tripdata: aiResponse,
+        email: user.email,
       };
-      console.log("Sending payload:", payload);
-  
+
+      // STEP 3: Save to DB
       const res = await axios.post(
         "https://tripify-ai-backend.onrender.com/trip/create",
-        payload
+        payload,
       );
       Navigate("/view-trip/" + res.data._id);
     } catch (e) {
