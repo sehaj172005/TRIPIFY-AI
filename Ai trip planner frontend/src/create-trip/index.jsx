@@ -61,7 +61,7 @@ function Createtrip() {
       setLoading(false);
       return;
     }
-
+  
     const user = localStorage.getItem("user");
     if (!user) {
       setDialogOpen(true);
@@ -69,26 +69,25 @@ function Createtrip() {
       setTripLoadingDialog(false);
       return;
     }
-
+  
     try {
       setLoading(true);
       setTripLoadingDialog(true);
-
+  
       // Log payload for debugging
       const payload = {
         userSelection: formData,
-        Tripdata: Tripdetails,
+        // Tripdata: Tripdetails, // <-- REMOVE THIS LINE
         email: user?.email,
       };
       console.log("Sending payload:", payload);
-
+  
       const res = await axios.post(
         "https://tripify-ai-backend.onrender.com/trip/create",
         payload
       );
       Navigate("/view-trip/" + res.data._id);
     } catch (e) {
-      // Log full error response for debugging
       toast.error("There was an error generating trip.");
       console.log("Error details:", e);
       if (e.response) {
