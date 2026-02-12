@@ -1,13 +1,13 @@
-import { Button } from "@/components/ui/button";
-import Header from './components/ui/Header'
-import logo from "../public/bird_2.jpg";
+import Header from "./components/ui/Header";
 import Hero from "./components/ui/Hero";
 
 function App() {
-  return <>
-  <Header/>
-  <Hero/>
-  </>
+  return (
+    <>
+      <Header />
+      <Hero />
+    </>
+  );
 }
 
 export default App;

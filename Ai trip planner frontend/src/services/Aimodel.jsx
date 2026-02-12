@@ -1,5 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
-
 const example = `
 {
   "hotelOptions": [
@@ -7,11 +5,6 @@ const example = `
       "hotelName": "string",
       "hotelAddress": "string",
       "price": "string",
-      "hotelImageUrl": "string",
-      "geoCoordinates": {
-        "latitude": 0,
-        "longitude": 0
-      },
       "rating": 0,
       "description": "string"
     }
@@ -23,11 +16,6 @@ const example = `
         {
           "placeName": "string",
           "placeDetails": "string",
-          "placeImageUrl": "string",
-          "geoCoordinates": {
-            "latitude": 0,
-            "longitude": 0
-          },
           "ticketPricing": "string",
           "rating": 0,
           "timeTravel": "string",
@@ -40,73 +28,62 @@ const example = `
 }
 `.trim();
 
-
-// Load API Key
-const apiKey = import.meta.env.VITE_APP_GEMINI_API_KEY;
-if (!apiKey) {
-  throw new Error("Gemini API key missing! Set it in your .env file");
-}
-
-// Initialize Gemini client
-const ai = new GoogleGenAI({ apiKey });
-
 /**
- * Get AI-generated travel plan.
+ * Get AI-generated travel plan using Puter.js SDK
  */
 export async function getTravelPlan({ location, days, budget, traveler }) {
-  // Final Prompt
   const prompt = `
-Your task is to return a valid JSON object that matches this format:
+You are an expert travel planner. Generate a detailed travel plan in VALID JSON format ONLY (no markdown, no extra text).
 
+The JSON must match this exact structure:
 ${example}
 
-Generate Travel plan for Location : ${location}, for ${days} days for ${traveler }with a ${budget} budget , Give me a Hotel Options (the hotels must be best according to given ${budget}) list with hotelName , hotelAddress , Price , HotelImageurl , geoCoordinates , rating (out of 5) and description and suggest itinerary with PlaceName , PlaceDetails , PlaceImageUrl  , geoCoordinates , ticketPricing , rating , timeTravel each of the location for ${days} days with each day plan with best time to visit ( just say morning  afternoon or evening ).
-in Json format , no extra commentary not even a single word  only JSON data, don't add any [3,7] or website reference like this i need to use this response no need for this.
-Output strictly valid JSON with no markdown, no commentary, and no \`\`\`json fences.
+Requirements:
+- Location: ${location}
+- Duration: ${days} days
+- Budget: ${budget}
+- Travelers: ${traveler}
+- Return ONLY valid JSON, no markdown, no code fences, no commentary
+- MUST include AT LEAST 3 hotel recommendations (minimum 3, maximum 5)
+- Hotel prices and ratings must be realistic
+- Each hotel must have unique pricing and characteristics (budget, mid-range, luxury)
+- Each day must have 3-4 places to visit
+- Best time to visit should be specific (morning/afternoon/evening)
+
+Generate the travel plan now in JSON format only:
 `.trim();
 
-  console.log("PROMPT SENT TO GEMINI ↓↓↓↓↓↓↓↓");
-  console.log(prompt);
+  console.log("🚀 GENERATING TRIP WITH PUTER.JS...");
+  console.log("Location:", location, "| Days:", days, "| Budget:", budget);
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro', // Switch to gemini-1.5-pro if available
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0, // Avoid hallucination
-        topK: 1,
-        topP: 1,
-        maxOutputTokens: 2500
-      }
+    // Use Puter.js SDK directly (no HTTP calls, no API keys)
+    const response = await window.puter.ai.chat(prompt, {
+      model: "gpt-4o-mini",
     });
 
-    let text = response.text.trim();
+    console.log("✅ Puter.js Response received");
 
-    // If it includes code fences, remove them
-    text = text.replace(/```json|```/g, '').trim();
+    const text = typeof response === "string" ? response : response.toString();
 
-    const parsed = JSON.parse(text);
+    // Remove any markdown code fences if present
+    const cleanedText = text.replace(/```json|```/g, "").trim();
 
-    // Optional: post-validate hotel addresses
-    for (const hotel of parsed.hotelOptions) {
-      if (!hotel.hotelAddress.toLowerCase().includes(location.toLowerCase())) {
-        console.warn("Hotel may not be in correct location:", hotel.hotelAddress);
-      }
-    }
+    const parsed = JSON.parse(cleanedText);
 
-    // Basic schema validation
+    // Validate schema
     if (
       !Array.isArray(parsed.hotelOptions) ||
-      typeof parsed.itinerary !== 'object' ||
-      typeof parsed.bestTimeToVisit !== 'string'
+      typeof parsed.itinerary !== "object" ||
+      typeof parsed.bestTimeToVisit !== "string"
     ) {
-      throw new Error('Invalid JSON structure returned by Gemini.');
+      throw new Error("Invalid JSON structure returned by AI.");
     }
 
+    console.log("✨ Trip plan generated successfully!");
     return parsed;
-
   } catch (err) {
-    console.error("❌ Gemini API Error:", err);
+    console.error("❌ Trip Generation Error:", err.message);
     throw new Error("Failed to generate travel plan. Please try again later.");
   }
 }

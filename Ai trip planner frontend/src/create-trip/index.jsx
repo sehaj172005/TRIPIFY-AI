@@ -22,7 +22,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/ui/Header";
 function Createtrip() {
-  const [selectedPlace, setSelectedPlace] = useState("null");
+  const [selectedPlace, setSelectedPlace] = useState("");
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [jsonData, setJsonData] = useState();
@@ -83,20 +83,18 @@ function Createtrip() {
       console.log(Tripdetails);
       const user = JSON.parse(localStorage.getItem("user"));
 
-      const res = await axios.post(
-        "https://tripify-ai-backend.onrender.com/trip/create",
-        {
-          userSelection: formData,
-          Tripdata: Tripdetails,
-          email: user?.email,
-        }
-      );
+      const res = await axios.post("http://localhost:3000/trip/create", {
+        userSelection: formData,
+        Tripdata: Tripdetails,
+        email: user?.email,
+      });
       Navigate("/view-trip/" + res.data._id);
     } catch (e) {
       toast.error("There was an error generating trip.");
       console.log(e);
     } finally {
       setLoading(false);
+      setTripLoadingDialog(false);
     }
   };
 
@@ -108,7 +106,7 @@ function Createtrip() {
           headers: {
             Authorization: `Bearer ${access_token}`,
           },
-        }
+        },
       );
       console.log("User Info:", userDetails.data);
       localStorage.setItem("user", JSON.stringify(userDetails.data));

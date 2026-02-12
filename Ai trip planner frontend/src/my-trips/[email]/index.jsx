@@ -9,13 +9,13 @@ function MyTrips() {
   const [tripData, setTripData] = useState([]);
   const navigate = useNavigate();
   const [tripPhotos, setTripPhotos] = useState({});
-  const API_KEY = import.meta.env.VITE_APP_GOOGLE_PLACE_API_KEY
+  const API_KEY = import.meta.env.VITE_APP_GOOGLE_PLACE_API_KEY;
 
   useEffect(() => {
     const fetchTrips = async () => {
       try {
         const response = await axios.get(
-          `https://tripify-ai-backend.onrender.com/trip/my-trips/${email}`
+          `http://localhost:3000/trip/my-trips/${email}`,
         );
         setTripData(response.data); // Set the trips
         console.log("Fetched Trips:", response.data);
@@ -54,37 +54,37 @@ function MyTrips() {
 
   return (
     <>
-    <Header />
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">My Trips</h2>
+      <Header />
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-4">My Trips</h2>
 
-      {tripData.length === 0 ? (
-        <p className="text-gray-600">No trips found.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tripData.map((trip) => (
-            <div
-              key={trip._id}
-              onClick={() => navigate(`/view-trip/${trip._id}`)}
-              className="cursor-pointer rounded-lg shadow-md hover:shadow-xl transition duration-300 bg-white"
-            >
-              <img
-                src={tripPhotos[trip.userSelection.location]}
-                alt="Trip"
-                className="w-full h-48 object-cover rounded-t-lg"
-              />
-              <div className="p-4">
-                <h3 className="text-lg font-semibold">
-                  {trip.userSelection?.location || "Unknown Location"}
-                </h3>
-                <p>Budget: {trip.userSelection?.Budget}</p>
-                <p>Travelers: {trip.userSelection?.traveler}</p>
+        {tripData.length === 0 ? (
+          <p className="text-gray-600">No trips found.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tripData.map((trip) => (
+              <div
+                key={trip._id}
+                onClick={() => navigate(`/view-trip/${trip._id}`)}
+                className="cursor-pointer rounded-lg shadow-md hover:shadow-xl transition duration-300 bg-white"
+              >
+                <img
+                  src={tripPhotos[trip.userSelection.location]}
+                  alt="Trip"
+                  className="w-full h-48 object-cover rounded-t-lg"
+                />
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold">
+                    {trip.userSelection?.location || "Unknown Location"}
+                  </h3>
+                  <p>Budget: {trip.userSelection?.Budget}</p>
+                  <p>Travelers: {trip.userSelection?.traveler}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </div>
     </>
   );
 }

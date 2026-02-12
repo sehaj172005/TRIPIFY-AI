@@ -17,7 +17,7 @@ function Viewtrip() {
     const fetchTrip = async () => {
       try {
         const tripDetails = await axios.get(
-          `https://tripify-ai-backend.onrender.com/trip/view-trip/${tripId}`
+          `http://localhost:3000/trip/view-trip/${tripId}`,
         );
         setTripData(tripDetails.data);
         console.log("data fetched.", tripDetails.data);
@@ -31,13 +31,12 @@ function Viewtrip() {
 
   return (
     <>
-    <Header />
-    <div className="p-10 md:px-20 lg:px-44 xl:px-56">
-      
-      <InformationSection trip={tripData} />
-      <Hotels trip={tripData} />
-      <PlacesToVisit trip={tripData} />
-    </div>
+      <Header />
+      <div className="p-10 md:px-20 lg:px-44 xl:px-56">
+        <InformationSection trip={tripData} />
+        <Hotels trip={tripData} />
+        <PlacesToVisit trip={tripData} />
+      </div>
     </>
   );
 }

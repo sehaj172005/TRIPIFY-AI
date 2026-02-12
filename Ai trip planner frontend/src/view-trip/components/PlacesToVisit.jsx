@@ -1,40 +1,56 @@
 import React, { useEffect, useState } from "react";
 import { FaClock, FaStar, FaTicketAlt, FaMapMarkerAlt } from "react-icons/fa";
-import { GetPlaceDetails } from "../../services/GloabalApi";
 import placeHolder from "../images/placeholder.jpg";
+import MapComponent from "../../components/ui/MapComponent";
+import { getUnsplashImages } from "../../services/UnsplashApi";
 
 function PlacesToVisit({ trip }) {
   const [placePhotos, setPlacePhotos] = useState({}); // placeName => photoURL
-  const API_KEY = import.meta.env.VITE_APP_GOOGLE_PLACE_API_KEY
+  const [placeCoords, setPlaceCoords] = useState({}); // placeName => [lat, lng]
+
+  // Geocode place to get coordinates
+  const geocodePlace = async (placeName) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(placeName)}&format=json&limit=1`,
+      );
+      const data = await response.json();
+      if (data.length > 0) {
+        const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+        setPlaceCoords((prev) => ({ ...prev, [placeName]: coords }));
+      }
+    } catch (error) {
+      console.error("Error geocoding place:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchPhotos = async () => {
-      if (!trip?.Tripdata?.itinerary) return;
+      if (!trip?.Tripdata?.itinerary) {
+        console.log("No itinerary available");
+        return;
+      }
 
-      const newPhotos = {};
-
+      const placeNames = [];
       for (const day of trip.Tripdata.itinerary) {
         for (const place of day.plan) {
-          try {
-            const data = { textQuery: place.placeName };
-            const result = await GetPlaceDetails(data);
-            const rawPhotoRef = result?.data?.places?.[0]?.photos?.[0]?.name;
-
-            if (rawPhotoRef) {
-              const photoRef = rawPhotoRef.split("/").pop();
-              const photoURL = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${API_KEY}`;
-              newPhotos[place.placeName] = photoURL;
-            }
-          } catch (err) {
-            console.error(
-              `Failed to load image for ${place.placeName}`,
-              err.message
-            );
-          }
+          placeNames.push(place.placeName);
+          geocodePlace(place.placeName);
         }
       }
 
-      setPlacePhotos(newPhotos);
+      console.log("🎯 Fetching photos for places:", placeNames);
+
+      try {
+        const photoMap = await getUnsplashImages(placeNames, {
+          type: "landmark",
+          location: trip.userSelection?.location || "",
+        });
+        console.log("🖼️ Place photos map:", photoMap);
+        setPlacePhotos(photoMap);
+      } catch (error) {
+        console.error("❌ Error fetching place photos:", error.message);
+      }
     };
 
     fetchPhotos();
@@ -99,22 +115,34 @@ function PlacesToVisit({ trip }) {
                         place.geoCoordinates?.longitude && (
                           <span className="flex items-center gap-1">
                             <FaMapMarkerAlt className="text-red-500" />
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                                place.placeName
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="underline"
-                            >
-                              View on map
-                            </a>
+                            <span className="text-xs">
+                              {place.geoCoordinates.latitude.toFixed(4)},{" "}
+                              {place.geoCoordinates.longitude.toFixed(4)}
+                            </span>
                           </span>
                         )}
                     </div>
                   </div>
                 </div>
               ))}
+
+              {/* Map for this day's places */}
+              {day.plan.some((place) => placeCoords[place.placeName]) && (
+                <div className="col-span-1 sm:col-span-2 lg:col-span-3 mt-4">
+                  <MapComponent
+                    center={
+                      placeCoords[day.plan[0]?.placeName] || [51.505, -0.09]
+                    }
+                    zoom={13}
+                    markers={day.plan.map((place) => ({
+                      position: placeCoords[place.placeName] || [0, 0],
+                      label: place.placeName,
+                      description: place.placeDetails,
+                    }))}
+                    height="300px"
+                  />
+                </div>
+              )}
             </div>
           </div>
         ))}

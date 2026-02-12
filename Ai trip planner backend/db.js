@@ -1,14 +1,11 @@
 const mongoose = require("mongoose");
-const {Schema,model} = mongoose;
-const objectId = Schema.Types.ObjectId;
+const { Schema, model } = mongoose;
 
 const tripSchema = new Schema({
-    userSelection : {type:Object},
-    Tripdata : {type:Object,required:true},
-    email : {type:String}
+  userSelection: { type: Object },
+  Tripdata: { type: Object, required: true },
+  email: { type: String },
+});
 
-})
-
-const Tripmodel = model("User-trip-details" , tripSchema,"User-trip-details");
-module.exports = {Tripmodel}
-
+const Tripmodel = model("Trip", tripSchema, "User-trip-details");
+module.exports = { Tripmodel };

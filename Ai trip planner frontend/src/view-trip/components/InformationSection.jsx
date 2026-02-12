@@ -2,45 +2,50 @@ import React, { useEffect, useState } from "react";
 import logo from "../images/placeholder.jpg";
 import { IoShareSocial } from "react-icons/io5";
 import { Button } from "../../components/ui/button";
-import { GetPlaceDetails } from "../../services/GloabalApi";
+import MapComponent from "../../components/ui/MapComponent";
+import { getUnsplashImage } from "../../services/UnsplashApi";
 
 function InformationSection({ trip }) {
-  const [photoUrl , setPhotoUrl ] = useState();
-  const API_KEY = import.meta.env.VITE_APP_GOOGLE_PLACE_API_KEY
- useEffect(() => {
-  if (trip?.userSelection?.location) {
-    GetPlacePhoto();
-  }
-}, [trip]);
+  const [photoUrl, setPhotoUrl] = useState(logo);
+  const [locationCoords, setLocationCoords] = useState([51.505, -0.09]);
 
-const GetPlacePhoto = async () => {
-  const data = {
-    textQuery: trip.userSelection.location,
+  // Geocode location to get coordinates
+  const geocodeLocation = async (locationName) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationName)}&format=json&limit=1`,
+      );
+      const data = await response.json();
+      if (data.length > 0) {
+        const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+        setLocationCoords(coords);
+      }
+    } catch (error) {
+      console.error("Error geocoding location:", error);
+    }
   };
 
-  try {
-    const result = await GetPlaceDetails(data);
-    console.log(result.data);
-
-    const rawPhotoRef = result.data.places?.[0]?.photos?.[0]?.name;
-    if (!rawPhotoRef) {
-      console.warn("No photo reference available.");
-      return;
+  useEffect(() => {
+    if (trip?.userSelection?.location) {
+      GetPlacePhoto();
+      geocodeLocation(trip.userSelection.location);
     }
+  }, [trip]);
 
-    const photoReference = rawPhotoRef.split("/").pop(); // Extract last part
-    const newPhotoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&maxheight=800&photo_reference=${photoReference}&key=${API_KEY}`;
-    setPhotoUrl(newPhotoUrl)
-
-    console.log("Photo URL:", photoUrl);
-  } catch (error) {
-    console.error(
-      "Error fetching place details:",
-      error.response?.data || error.message
-    );
-  }
-};
-
+  const GetPlacePhoto = async () => {
+    try {
+      const imageUrl = await getUnsplashImage(trip.userSelection.location, {
+        type: "landmark",
+        location: trip.userSelection.location,
+      });
+      if (imageUrl) {
+        setPhotoUrl(imageUrl);
+        console.log("✅ Destination image loaded:", imageUrl);
+      }
+    } catch (error) {
+      console.error("Error fetching destination image:", error.message);
+    }
+  };
 
   return (
     <div>
@@ -75,6 +80,22 @@ const GetPlacePhoto = async () => {
             <span className="hidden sm:inline">Share</span>
           </Button>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="font-bold text-2xl mb-4">Location</h2>
+        <MapComponent
+          center={locationCoords}
+          zoom={12}
+          markers={[
+            {
+              position: locationCoords,
+              label: trip?.userSelection?.location,
+              description: "Your trip destination",
+            },
+          ]}
+          height="350px"
+        />
       </div>
     </div>
   );

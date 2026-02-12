@@ -9,15 +9,18 @@ TripRoutes.post("/create", async (req, res) => {
   const { userSelection, Tripdata, email } = req.body;
 
   try {
+    console.log("Creating trip with data:", { userSelection, email });
     const Trip = await Tripmodel.create({
       userSelection,
       Tripdata,
       email,
     });
+    console.log("Trip created successfully:", Trip._id);
     res.status(201).json({ _id: Trip._id }); // Return the ObjectId
   } catch (e) {
-    console.log("Error saving trip to DB.", e);
-    res.status(500).json({ error: "Error saving trip" });
+    console.error("Error saving trip to DB:", e.message);
+    console.error("Full error:", e);
+    res.status(500).json({ error: "Error saving trip", details: e.message });
   }
 });
 
@@ -47,6 +50,5 @@ TripRoutes.get("/my-trips/:email", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch trips." });
   }
 });
-
 
 module.exports = { TripRoutes };
