@@ -15,7 +15,7 @@ function MyTrips() {
     const fetchTrips = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3000/trip/my-trips/${email}`,
+          `https://tripify-ai-backend.onrender.com/trip/my-trips/${email}`,
         );
         setTripData(response.data); // Set the trips
         console.log("Fetched Trips:", response.data);
