@@ -73,25 +73,27 @@ function Createtrip() {
     try {
       setLoading(true);
       setTripLoadingDialog(true);
-      const Tripdetails = await getTravelPlan({
-        location: formData.location || "",
-        days: formData.NoofDays,
-        budget: formData.Budget,
-        traveler: formData.traveler,
-      });
-      setJsonData(Tripdetails);
-      console.log(Tripdetails);
-      const user = JSON.parse(localStorage.getItem("user"));
 
-      const res = await axios.post("https://tripify-ai-backend.onrender.com/trip/create", {
+      // Log payload for debugging
+      const payload = {
         userSelection: formData,
         Tripdata: Tripdetails,
         email: user?.email,
-      });
+      };
+      console.log("Sending payload:", payload);
+
+      const res = await axios.post(
+        "https://tripify-ai-backend.onrender.com/trip/create",
+        payload
+      );
       Navigate("/view-trip/" + res.data._id);
     } catch (e) {
+      // Log full error response for debugging
       toast.error("There was an error generating trip.");
-      console.log(e);
+      console.log("Error details:", e);
+      if (e.response) {
+        console.log("Backend error response:", e.response.data);
+      }
     } finally {
       setLoading(false);
       setTripLoadingDialog(false);
