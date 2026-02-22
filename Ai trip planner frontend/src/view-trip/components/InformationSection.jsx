@@ -1,34 +1,15 @@
 import React, { useEffect, useState } from "react";
 import logo from "../images/placeholder.jpg";
-import { IoShareSocial } from "react-icons/io5";
-import { Button } from "../../components/ui/button";
-import MapComponent from "../../components/ui/MapComponent";
 import { getUnsplashImage } from "../../services/UnsplashApi";
+import { Calendar, Wallet, Users, MapPin } from "lucide-react";
 
 function InformationSection({ trip }) {
   const [photoUrl, setPhotoUrl] = useState(logo);
-  const [locationCoords, setLocationCoords] = useState([51.505, -0.09]);
-
-  // Geocode location to get coordinates
-  const geocodeLocation = async (locationName) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationName)}&format=json&limit=1`,
-      );
-      const data = await response.json();
-      if (data.length > 0) {
-        const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-        setLocationCoords(coords);
-      }
-    } catch (error) {
-      console.error("Error geocoding location:", error);
-    }
-  };
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     if (trip?.userSelection?.location) {
       GetPlacePhoto();
-      geocodeLocation(trip.userSelection.location);
     }
   }, [trip]);
 
@@ -40,64 +21,51 @@ function InformationSection({ trip }) {
       });
       if (imageUrl) {
         setPhotoUrl(imageUrl);
-        console.log("✅ Destination image loaded:", imageUrl);
       }
     } catch (error) {
       console.error("Error fetching destination image:", error.message);
     }
   };
 
+  const badges = [
+    { icon: <Calendar className="w-3.5 h-3.5" />, label: `${trip?.userSelection?.NoofDays} Days` },
+    { icon: <Wallet className="w-3.5 h-3.5" />, label: `${trip?.userSelection?.Budget} Budget` },
+    { icon: <Users className="w-3.5 h-3.5" />, label: trip?.userSelection?.traveler },
+  ];
+
   return (
-    <div>
-      <img
-        src={photoUrl}
-        alt=""
-        className="h-[200px] md:h-[340px] w-full object-cover"
-      />
-
-      <div className="flex flex-col md:flex-row justify-between items-start  mt-5 gap-4">
-        <div className="flex flex-col gap-2">
-          <h2 className="font-bold text-2xl">
-            {trip?.userSelection?.location}
-          </h2>
-
-          <div className="flex flex-wrap gap-3">
-            <h2 className="p-1 px-3 bg-gray-200 rounded-full text-sm md:text-base text-gray-500">
-              ⌛ {trip?.userSelection?.NoofDays} Days
-            </h2>
-            <h2 className="p-1 px-3 bg-gray-200 rounded-full text-sm md:text-base text-gray-500">
-              💰 {trip?.userSelection?.Budget} Budget
-            </h2>
-            <h2 className="p-1 px-3 bg-gray-200 rounded-full text-sm md:text-base text-gray-500">
-              🥂 No. of Travelers: {trip?.userSelection?.traveler}
-            </h2>
+    <div className="animate-fade-in">
+      {/* Hero Image */}
+      <div className="relative w-full h-[260px] md:h-[420px] rounded-3xl overflow-hidden shadow-2xl mb-8">
+        <img
+          src={photoUrl}
+          alt={trip?.userSelection?.location}
+          onLoad={() => setImageLoaded(true)}
+          className={`w-full h-full object-cover transition-all duration-700 ${imageLoaded ? "scale-100 opacity-100" : "scale-105 opacity-0"}`}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+          <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
+            <MapPin className="w-4 h-4" />
+            Your destination
           </div>
-        </div>
-
-        <div className="self-end md:self-auto">
-          <Button className="flex items-center gap-2">
-            <IoShareSocial className="text-lg" />
-            <span className="hidden sm:inline">Share</span>
-          </Button>
+          <h1 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg">
+            {trip?.userSelection?.location}
+          </h1>
         </div>
       </div>
 
-      <div className="mt-8">
-        <h2 className="font-bold text-2xl mb-4">Location</h2>
-        <MapComponent
-          center={locationCoords}
-          zoom={12}
-          markers={[
-            {
-              position: locationCoords,
-              label: trip?.userSelection?.location,
-              description: "Your trip destination",
-            },
-          ]}
-          height="350px"
-        />
+      {/* Trip badges */}
+      <div className="flex flex-wrap gap-3 mb-10">
+        {badges.map((b, i) => (
+          <span key={i} className="inline-flex items-center gap-2 bg-white border border-gray-100 shadow-sm px-4 py-2 rounded-full text-sm font-medium text-gray-700">
+            <span className="text-sky-500">{b.icon}</span>
+            {b.label}
+          </span>
+        ))}
       </div>
     </div>
   );
 }
+
 export default InformationSection;

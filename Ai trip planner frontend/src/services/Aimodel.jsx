@@ -1,4 +1,34 @@
-const example = `
+// ─────────────────────────────────────────────
+//  AI Travel Plan – powered by Groq (FREE tier)
+//  Model: llama-3.3-70b-versatile
+//  Sign up & get your free key → https://console.groq.com
+// ─────────────────────────────────────────────
+
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const MODEL = "llama-3.3-70b-versatile";
+
+// ── Prompt ────────────────────────────────────
+function buildPrompt({ location, NoofDays, Budget, traveler }) {
+  return `You are an expert travel planner. Generate a detailed travel plan in VALID JSON format ONLY.
+
+STRICT RULES:
+- Return ONLY raw JSON — no markdown, no code fences, no comments, no extra text whatsoever.
+- The JSON must match the exact schema below — nothing more, nothing less.
+- All string values must be non-empty and realistic.
+- "rating" must be a number between 1 and 5 (e.g. 4.2).
+- "price" should show a realistic per-night cost in USD (e.g. "$80/night").
+- "timeTravel" should indicate travel time from the city center (e.g. "10 min by taxi").
+- "ticketPricing" should be a realistic cost (e.g. "Free" or "$15/person").
+- "bestTimeToVisit" should specify morning/afternoon/evening and a short reason.
+
+TRIP DETAILS:
+- Destination: ${location}
+- Duration: ${NoofDays} day(s)
+- Budget: ${Budget}
+- Travelers: ${traveler}
+
+REQUIRED JSON SCHEMA (follow exactly):
 {
   "hotelOptions": [
     {
@@ -26,66 +56,115 @@ const example = `
   ],
   "bestTimeToVisit": "string"
 }
-`.trim();
 
-/**
- * Get AI-generated travel plan using Puter.js SDK
- */
-export async function getTravelPlan({ location, days, budget, traveler }) {
-  const prompt = `
-You are an expert travel planner. Generate a detailed travel plan in VALID JSON format ONLY (no markdown, no extra text).
+REQUIREMENTS:
+- Include AT LEAST 3 hotel options (budget, mid-range, luxury — different price ranges).
+- Include exactly ${NoofDays} day(s) in the itinerary array.
+- Each day must have 3–4 places to visit.
+- All data must be specific to ${location}.
 
-The JSON must match this exact structure:
-${example}
+Output the JSON now:`;
+}
 
-Requirements:
-- Location: ${location}
-- Duration: ${days} days
-- Budget: ${budget}
-- Travelers: ${traveler}
-- Return ONLY valid JSON, no markdown, no code fences, no commentary
-- MUST include AT LEAST 3 hotel recommendations (minimum 3, maximum 5)
-- Hotel prices and ratings must be realistic
-- Each hotel must have unique pricing and characteristics (budget, mid-range, luxury)
-- Each day must have 3-4 places to visit
-- Best time to visit should be specific (morning/afternoon/evening)
+// ── JSON Extractor (handles stray markdown) ───
+function extractJSON(raw) {
+  // 1. Remove markdown fences if accidentally present
+  let cleaned = raw
+    .replace(/^```(?:json)?/im, "")
+    .replace(/```$/im, "")
+    .trim();
 
-Generate the travel plan now in JSON format only:
-`.trim();
-
-  console.log("🚀 GENERATING TRIP WITH PUTER.JS...");
-  console.log("Location:", location, "| Days:", days, "| Budget:", budget);
-
+  // 2. Try direct parse
   try {
-    // Use Puter.js SDK directly (no HTTP calls, no API keys)
-    const response = await window.puter.ai.chat(prompt, {
-      model: "gpt-4o-mini",
-    });
-
-    console.log("✅ Puter.js Response received");
-
-    const text = typeof response === "string" ? response : response.toString();
-
-    // Remove any markdown code fences if present
-    const cleanedText = text.replace(/```json|```/g, "").trim();
-
-    const parsed = JSON.parse(cleanedText);
-
-    // Validate schema
-    if (
-      !Array.isArray(parsed.hotelOptions) ||
-      typeof parsed.itinerary !== "object" ||
-      typeof parsed.bestTimeToVisit !== "string"
-    ) {
-      throw new Error("Invalid JSON structure returned by AI.");
+    return JSON.parse(cleaned);
+  } catch (_) {
+    // 3. Try to find the outermost { … } block
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start !== -1 && end !== -1 && end > start) {
+      try {
+        return JSON.parse(cleaned.slice(start, end + 1));
+      } catch (_) { }
     }
-
-    console.log("✨ Trip plan generated successfully!");
-    return parsed;
-  } catch (err) {
-    console.error("❌ Trip Generation Error:", err.message);
-    throw new Error("Failed to generate travel plan. Please try again later.");
+    throw new Error("Could not extract valid JSON from AI response.");
   }
+}
+
+// ── Schema Validator ──────────────────────────
+function validateSchema(data) {
+  if (!Array.isArray(data.hotelOptions) || data.hotelOptions.length < 1) {
+    throw new Error("Missing or empty hotelOptions array.");
+  }
+  if (!Array.isArray(data.itinerary) || data.itinerary.length < 1) {
+    throw new Error("Missing or empty itinerary array.");
+  }
+  if (typeof data.bestTimeToVisit !== "string" || !data.bestTimeToVisit) {
+    throw new Error("Missing bestTimeToVisit field.");
+  }
+  // Validate each hotel
+  data.hotelOptions.forEach((hotel, i) => {
+    if (!hotel.hotelName || !hotel.hotelAddress || !hotel.price) {
+      throw new Error(`Hotel at index ${i} is missing required fields.`);
+    }
+  });
+  // Validate itinerary days
+  data.itinerary.forEach((day, i) => {
+    if (!Array.isArray(day.plan) || day.plan.length < 1) {
+      throw new Error(`Day ${i + 1} has no places in its plan.`);
+    }
+  });
+}
+
+// ── Main Export ───────────────────────────────
+export async function getTravelPlan({ location, NoofDays, Budget, traveler }) {
+  if (!GROQ_API_KEY || GROQ_API_KEY === "your_groq_api_key_here") {
+    throw new Error(
+      "Groq API key is missing. Add VITE_GROQ_API_KEY to your .env file. Get a free key at https://console.groq.com"
+    );
+  }
+
+  const prompt = buildPrompt({ location, NoofDays, Budget, traveler });
+
+  const response = await fetch(GROQ_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an expert travel planner. You ONLY output raw valid JSON — never markdown, never code fences, never any extra text. Your entire response is always a single valid JSON object.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 4096,
+      response_format: { type: "json_object" }, // forces JSON output
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Groq API returned ${response.status}: ${errorBody}`);
+  }
+
+  const data = await response.json();
+  const rawText = data?.choices?.[0]?.message?.content;
+
+  if (!rawText) {
+    throw new Error("Groq returned an empty response.");
+  }
+
+  const parsed = extractJSON(rawText);
+  validateSchema(parsed);
+  return parsed;
 }
 
 export default getTravelPlan;

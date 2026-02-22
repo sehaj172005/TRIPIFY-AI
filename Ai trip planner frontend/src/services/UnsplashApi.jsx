@@ -1,136 +1,137 @@
 import axios from "axios";
 
+const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_APP_UNSPLASH_ACCESS_KEY;
 const PEXELS_API_KEY = import.meta.env.VITE_APP_PEXELS_API_KEY;
 
-console.log("🔑 Pexels API Key available:", !!PEXELS_API_KEY);
+// ─── Unsplash (Primary) ───────────────────────────────────────────────────────
 
 /**
- * Fetch image URL from Pexels for a given query
- * @param {string} query - Search query (hotel name, place name, etc.)
- * @param {Object} options - Optional configuration
- * @param {string} options.location - Location/city context (e.g., "Delhi")
- * @param {string} options.type - Type of search (e.g., "landmark", "hotel", "attraction")
- * @returns {string} Image URL or empty string if not found
+ * Fetch a location-accurate image from Unsplash.
+ * @param {string} query  - Search term (place name, hotel name, etc.)
+ * @param {Object} options - { location, type: "hotel"|"landmark"|"place"|"attraction" }
+ * @returns {string} image URL or ""
  */
-export const getUnsplashImage = async (query, options = {}) => {
-  if (!PEXELS_API_KEY) {
-    console.warn("⚠️ Pexels API key not configured in .env");
-    return "";
-  }
+const fetchFromUnsplash = async (query, options = {}) => {
+  if (!UNSPLASH_ACCESS_KEY || UNSPLASH_ACCESS_KEY === "YOUR_UNSPLASH_ACCESS_KEY_HERE") return null;
 
-  if (!query) {
-    console.warn("⚠️ No query provided to getUnsplashImage");
-    return "";
-  }
-
-  // Build multiple search strategies with increasing specificity
-  const searchStrategies = [];
-
-  if (options.type === "hotel") {
-    // For hotels, try more specific searches to differentiate between hotels
-    if (options.location) {
-      searchStrategies.push(`${query} ${options.location}`);
-      searchStrategies.push(`${query} luxury hotel`);
-      searchStrategies.push(`${query} 5 star`);
-      searchStrategies.push(`${options.location} luxury hotel`);
-      searchStrategies.push(`${query}`);
-    } else {
-      searchStrategies.push(`${query} luxury hotel`);
-      searchStrategies.push(`${query}`);
+  const buildQueries = () => {
+    const { location, type } = options;
+    if (type === "hotel") {
+      return location
+        ? [`${query} ${location} hotel`, `${query} hotel`, `${location} luxury hotel`]
+        : [`${query} hotel`, `${query}`];
     }
-  } else if (
-    options.type === "landmark" ||
-    options.type === "attraction" ||
-    options.type === "place"
-  ) {
-    // For landmarks/attractions, be more specific
-    if (options.location) {
-      searchStrategies.push(`${query} ${options.location}`);
-      searchStrategies.push(`${query} attraction`);
-      searchStrategies.push(`${query}`);
-    } else {
-      searchStrategies.push(`${query} landmark`);
-      searchStrategies.push(`${query}`);
+    if (["landmark", "attraction", "place"].includes(type)) {
+      return location
+        ? [`${query} ${location}`, `${query} landmark`, `${query}`]
+        : [`${query} landmark`, `${query}`];
     }
-  } else {
-    // Default strategy
-    if (options.location) {
-      searchStrategies.push(`${query} ${options.location}`);
-      searchStrategies.push(`${query}`);
-    } else {
-      searchStrategies.push(`${query}`);
-    }
-  }
+    return location ? [`${query} ${location}`, `${query}`] : [`${query}`];
+  };
 
-  // Try each search strategy until we find results
-  for (const searchQuery of searchStrategies) {
+  for (const q of buildQueries()) {
     try {
-      console.log(`🔍 Trying: "${searchQuery}"`);
+      const res = await axios.get("https://api.unsplash.com/search/photos", {
+        params: { query: q, per_page: 5, orientation: "landscape" },
+        headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` },
+      });
 
-      const response = await axios.get(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&per_page=5&orientation=landscape`,
-        {
-          headers: {
-            Authorization: PEXELS_API_KEY,
-          },
-        },
+      const photos = res.data?.results;
+      if (photos && photos.length > 0) {
+        const best = photos.sort(
+          (a, b) => b.width * b.height - a.width * a.height
+        )[0];
+        const url = best.urls.regular;
+        return url;
+      }
+    } catch (err) {
+      // silently continue to next query
+    }
+  }
+  return null;
+};
+
+// ─── Pexels (Fallback) ────────────────────────────────────────────────────────
+
+/**
+ * Fallback to Pexels if Unsplash fails or has no key.
+ */
+const fetchFromPexels = async (query, options = {}) => {
+  if (!PEXELS_API_KEY) return null;
+
+  const buildQueries = () => {
+    const { location, type } = options;
+    if (type === "hotel") {
+      return location
+        ? [`${query} ${location}`, `${query} luxury hotel`, `${location} luxury hotel`, query]
+        : [`${query} luxury hotel`, query];
+    }
+    if (["landmark", "attraction", "place"].includes(type)) {
+      return location
+        ? [`${query} ${location}`, `${query} attraction`, query]
+        : [`${query} landmark`, query];
+    }
+    return location ? [`${query} ${location}`, query] : [query];
+  };
+
+  for (const q of buildQueries()) {
+    try {
+      const res = await axios.get(
+        `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=5&orientation=landscape`,
+        { headers: { Authorization: PEXELS_API_KEY } }
       );
 
-      if (response.data.photos && response.data.photos.length > 0) {
-        // For hotels, randomize selection to get different images
-        let selectedPhoto = response.data.photos[0];
-        if (options.type === "hotel" && response.data.photos.length > 1) {
-          // Vary the selection to avoid similar images
-          const randomIndex = Math.floor(
-            Math.random() * Math.min(3, response.data.photos.length),
-          );
-          selectedPhoto = response.data.photos[randomIndex];
-        } else {
-          // Pick the best image (prefer higher quality/resolution)
-          selectedPhoto = response.data.photos.sort(
-            (a, b) => b.width * b.height - a.width * a.height,
-          )[0];
-        }
-        const imageUrl = selectedPhoto.src.large;
-        console.log("✅ Image found with query:", searchQuery);
-        return imageUrl;
+      const photos = res.data?.photos;
+      if (photos && photos.length > 0) {
+        const best = photos.sort((a, b) => b.width * b.height - a.width * a.height)[0];
+        return best.src.large;
       }
-    } catch (error) {
-      console.error(`❌ Error with query "${searchQuery}":`, error.message);
-      continue;
+    } catch (err) {
+      // silently continue to next query
     }
   }
+  return null;
+};
 
-  console.warn(`⚠️ No results found for any strategy for: "${query}"`);
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Fetch a single location-accurate image.
+ * Tries Unsplash first (better quality & accuracy), falls back to Pexels.
+ *
+ * @param {string} query  - Search term
+ * @param {Object} options - { location, type }
+ * @returns {Promise<string>} Image URL or ""
+ */
+export const getUnsplashImage = async (query, options = {}) => {
+  if (!query) return "";
+
+  const unsplashUrl = await fetchFromUnsplash(query, options);
+  if (unsplashUrl) return unsplashUrl;
+
+  const pexelsUrl = await fetchFromPexels(query, options);
+  if (pexelsUrl) return pexelsUrl;
+
   return "";
 };
 
 /**
- * Fetch images for multiple queries in parallel
- * @param {string[]} queries - Array of search queries
- * @param {Object} options - Optional configuration (location, type)
- * @returns {Promise<Object>} Map of query => imageUrl
+ * Fetch images for multiple queries in parallel.
+ * Returns a map of query => imageUrl.
+ *
+ * @param {string[]} queries - Array of search terms
+ * @param {Object}   options - { location, type }
+ * @returns {Promise<Object>}
  */
 export const getUnsplashImages = async (queries = [], options = {}) => {
-  if (!PEXELS_API_KEY) {
-    console.warn("⚠️ Pexels API key not configured");
-    return {};
-  }
-
-  const normalizedQueries = Array.isArray(queries) ? queries : [queries];
-  if (normalizedQueries.length === 0) {
-    console.warn("⚠️ No queries provided to getUnsplashImages");
-    return {};
-  }
+  const normalized = Array.isArray(queries) ? queries : [queries];
+  if (normalized.length === 0) return {};
 
   const imageMap = {};
-
-  // Fetch all images in parallel
-  const promises = normalizedQueries.map(async (query) => {
-    const url = await getUnsplashImage(query, options);
-    imageMap[query] = url;
-  });
-
-  await Promise.all(promises);
+  await Promise.all(
+    normalized.map(async (query) => {
+      imageMap[query] = await getUnsplashImage(query, options);
+    })
+  );
   return imageMap;
 };

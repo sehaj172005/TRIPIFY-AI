@@ -1,112 +1,90 @@
-import { Hotel as HotelIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import placeHolder from "../images/placeholder.jpg";
-import { FaMapPin } from "react-icons/fa";
-import MapComponent from "../../components/ui/MapComponent";
 import { getUnsplashImages } from "../../services/UnsplashApi";
+import { Hotel as HotelIcon, Star, MapPin, DollarSign, ExternalLink } from "lucide-react";
 
 function Hotels({ trip }) {
-  const [hotelPhotos, setHotelPhotos] = useState({}); // hotelName => photo URL
-  const [hotelCoords, setHotelCoords] = useState({}); // hotelName => [lat, lng]
+  const [hotelPhotos, setHotelPhotos] = useState({});
 
-  // Geocode hotel location
-  const geocodeHotel = async (hotelName, hotelAddress) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(hotelName + " " + hotelAddress)}&format=json&limit=1`,
-      );
-      const data = await response.json();
-      if (data.length > 0) {
-        const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-        setHotelCoords((prev) => ({ ...prev, [hotelName]: coords }));
-      }
-    } catch (error) {
-      console.error("Error geocoding hotel:", error);
-    }
-  };
-
-  // Open Google Maps with hotel location
-  const openGoogleMaps = (hotelAddress) => {
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotelAddress)}`;
+  const openGoogleMaps = (hotelName, hotelAddress) => {
+    const query = `${hotelName} ${hotelAddress}`;
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
     window.open(mapsUrl, "_blank");
   };
 
-  // Fetch photos when trip data changes
   useEffect(() => {
     const fetchAllHotelPhotos = async () => {
-      if (!trip?.Tripdata?.hotelOptions) {
-        console.log("No hotel options available");
-        return;
-      }
-
+      if (!trip?.Tripdata?.hotelOptions) return;
       const hotelNames = trip.Tripdata.hotelOptions.map((h) => h.hotelName);
-      console.log("🏨 Fetching photos for hotels:", hotelNames);
-
       try {
         const photoMap = await getUnsplashImages(hotelNames, {
           type: "hotel",
           location: trip.userSelection?.location || "",
         });
-        console.log("🖼️ Hotel photos map:", photoMap);
         setHotelPhotos(photoMap);
       } catch (error) {
         console.error("❌ Error fetching hotel photos:", error.message);
       }
-
-      // Geocode all hotels
-      for (const hotel of trip.Tripdata.hotelOptions) {
-        geocodeHotel(hotel.hotelName, hotel.hotelAddress);
-      }
     };
-
     fetchAllHotelPhotos();
   }, [trip]);
 
   return (
-    <div>
-      <h2 className="font-bold text-2xl mt-5">Hotel Recommendations</h2>
+    <div className="my-10 animate-fade-in">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 bg-sky-100 rounded-2xl flex items-center justify-center">
+          <HotelIcon className="w-5 h-5 text-sky-600" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Hotel Recommendations</h2>
+          <p className="text-sm text-gray-400">Click any card to view on Google Maps</p>
+        </div>
+      </div>
 
-      {/* Hotel Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 my-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {trip?.Tripdata?.hotelOptions?.map((hotel, index) => (
           <div
             key={index}
-            onClick={() => openGoogleMaps(hotel.hotelAddress)}
-            className="hover:scale-105 transition-all cursor-pointer block rounded-lg overflow-hidden shadow-md hover:shadow-lg bg-white"
+            onClick={() => openGoogleMaps(hotel.hotelName, hotel.hotelAddress)}
+            className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm card-hover cursor-pointer"
           >
-            <img
-              src={hotelPhotos[hotel.hotelName] || placeHolder}
-              alt={hotel.hotelName}
-              className="w-full h-[200px] object-cover"
-            />
-            <div className="my-2 flex flex-col gap-2 p-2">
-              <h3 className="font-medium">{hotel?.hotelName}</h3>
-              <p className="text-xs text-gray-500">📍 {hotel?.hotelAddress}</p>
-              <p className="text-sm">💰 {hotel?.price}</p>
-              <p className="text-sm">⭐ {hotel?.rating} Stars</p>
+            <div className="relative overflow-hidden h-52">
+              <img
+                src={hotelPhotos[hotel.hotelName] || placeHolder}
+                alt={hotel.hotelName}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                <span className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-3 py-1.5 rounded-full shadow-md">
+                  <ExternalLink className="w-3 h-3" />
+                  View on Maps
+                </span>
+              </div>
+              {hotel?.rating && (
+                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-full flex items-center gap-1 text-xs font-semibold shadow-md">
+                  <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                  {hotel.rating}
+                </div>
+              )}
+            </div>
+            <div className="p-4">
+              <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1 line-clamp-1">{hotel?.hotelName}</h3>
+              <p className="text-xs text-gray-400 flex items-start gap-1 mb-3 line-clamp-2">
+                <MapPin className="w-3 h-3 mt-0.5 shrink-0 text-gray-300" />
+                {hotel?.hotelAddress}
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 text-sm font-semibold text-sky-600">
+                  <DollarSign className="w-4 h-4" />
+                  {hotel?.price}
+                </span>
+                <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">per night</span>
+              </div>
             </div>
           </div>
         ))}
       </div>
-
-      {/* Hotels Map */}
-      {Object.keys(hotelCoords).length > 0 && (
-        <div className="mt-8">
-          <h3 className="font-bold text-xl mb-4">Hotels on Map</h3>
-          <MapComponent
-            center={Object.values(hotelCoords)[0] || [51.505, -0.09]}
-            zoom={13}
-            markers={
-              trip?.Tripdata?.hotelOptions?.map((hotel) => ({
-                position: hotelCoords[hotel.hotelName] || [0, 0],
-                label: hotel.hotelName,
-                description: hotel.hotelAddress,
-              })) || []
-            }
-            height="350px"
-          />
-        </div>
-      )}
     </div>
   );
 }

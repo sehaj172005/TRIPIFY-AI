@@ -1,148 +1,112 @@
 import React, { useEffect, useState } from "react";
 import { FaClock, FaStar, FaTicketAlt, FaMapMarkerAlt } from "react-icons/fa";
 import placeHolder from "../images/placeholder.jpg";
-import MapComponent from "../../components/ui/MapComponent";
 import { getUnsplashImages } from "../../services/UnsplashApi";
+import { Compass } from "lucide-react";
 
 function PlacesToVisit({ trip }) {
-  const [placePhotos, setPlacePhotos] = useState({}); // placeName => photoURL
-  const [placeCoords, setPlaceCoords] = useState({}); // placeName => [lat, lng]
-
-  // Geocode place to get coordinates
-  const geocodePlace = async (placeName) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(placeName)}&format=json&limit=1`,
-      );
-      const data = await response.json();
-      if (data.length > 0) {
-        const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-        setPlaceCoords((prev) => ({ ...prev, [placeName]: coords }));
-      }
-    } catch (error) {
-      console.error("Error geocoding place:", error);
-    }
-  };
+  const [placePhotos, setPlacePhotos] = useState({});
 
   useEffect(() => {
     const fetchPhotos = async () => {
-      if (!trip?.Tripdata?.itinerary) {
-        console.log("No itinerary available");
-        return;
-      }
-
+      if (!trip?.Tripdata?.itinerary) return;
       const placeNames = [];
       for (const day of trip.Tripdata.itinerary) {
         for (const place of day.plan) {
           placeNames.push(place.placeName);
-          geocodePlace(place.placeName);
         }
       }
-
-      console.log("🎯 Fetching photos for places:", placeNames);
-
       try {
         const photoMap = await getUnsplashImages(placeNames, {
           type: "landmark",
           location: trip.userSelection?.location || "",
         });
-        console.log("🖼️ Place photos map:", photoMap);
         setPlacePhotos(photoMap);
       } catch (error) {
         console.error("❌ Error fetching place photos:", error.message);
       }
     };
-
     fetchPhotos();
   }, [trip]);
 
+  const dayColors = [
+    "from-sky-500 to-blue-600",
+    "from-teal-500 to-green-600",
+    "from-orange-500 to-amber-600",
+    "from-purple-500 to-violet-600",
+    "from-rose-500 to-pink-600",
+    "from-indigo-500 to-blue-700",
+    "from-emerald-500 to-teal-700",
+  ];
+
   return (
-    <div className="my-8">
-      <h2 className="font-bold text-2xl">Places to Visit</h2>
+    <div className="my-10 animate-fade-in">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-10 h-10 bg-teal-100 rounded-2xl flex items-center justify-center">
+          <Compass className="w-5 h-5 text-teal-600" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Your Itinerary</h2>
+          <p className="text-sm text-gray-400">Day-by-day places to explore</p>
+        </div>
+      </div>
 
-      <div className="flex flex-col gap-8 mt-6">
+      <div className="flex flex-col gap-12">
         {trip?.Tripdata?.itinerary?.map((day, dayIndex) => (
-          <div key={dayIndex}>
-            <h3 className="text-xl font-semibold text-gray-700 mb-4">
-              {day.day}
-            </h3>
+          <div key={dayIndex} className="animate-fade-up">
+            {/* Day Header */}
+            <div className="flex items-center gap-4 mb-5">
+              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${dayColors[dayIndex % dayColors.length]} flex items-center justify-center shadow-lg shrink-0`}>
+                <span className="text-white font-bold text-base">{dayIndex + 1}</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">{day.day}</h3>
+                <p className="text-sm text-gray-400">{day.plan?.length} places to visit</p>
+              </div>
+            </div>
 
+            {/* Place Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {day.plan.map((place, placeIndex) => (
                 <div
                   key={placeIndex}
-                  className="rounded-xl overflow-hidden border shadow hover:scale-105 transition-all bg-white"
+                  className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm card-hover"
                 >
-                  <img
-                    src={
-                      placePhotos[place.placeName] ||
-                      place.placeImageUrl ||
-                      placeHolder
-                    }
-                    alt={place.placeName}
-                    className="w-full h-48 object-cover"
-                  />
-
-                  <div className="p-4 flex flex-col gap-2">
-                    <h4 className="font-bold text-lg">{place.placeName}</h4>
-                    <p className="text-sm text-gray-600">
-                      {place.placeDetails}
-                    </p>
-
-                    <div className="flex flex-col gap-x-4 gap-y-1 text-sm text-gray-600 mt-2">
+                  <div className="relative overflow-hidden h-44">
+                    <img
+                      src={placePhotos[place.placeName] || place.placeImageUrl || placeHolder}
+                      alt={place.placeName}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-xs font-bold text-gray-700 shadow-md">
+                      {placeIndex + 1}
+                    </div>
+                    {place.rating && (
+                      <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-semibold shadow-md">
+                        <FaStar className="text-yellow-400 text-xs" />
+                        {place.rating}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h4 className="font-semibold text-gray-900 text-sm mb-1 leading-snug">{place.placeName}</h4>
+                    <p className="text-xs text-gray-400 leading-relaxed mb-3 line-clamp-2">{place.placeDetails}</p>
+                    <div className="flex flex-wrap gap-2">
                       {place.bestTimeToVisit && (
-                        <span className="flex items-center gap-1">
-                          <FaClock className="text-gray-400" />
-                          {place.bestTimeToVisit}
+                        <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-medium">
+                          <FaClock className="text-[10px]" />{place.bestTimeToVisit}
                         </span>
                       )}
-
                       {place.ticketPricing && (
-                        <span className="flex items-center gap-1">
-                          <FaTicketAlt className="text-gray-400" />
-                          {place.ticketPricing}
+                        <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-600 px-2 py-1 rounded-lg font-medium">
+                          <FaTicketAlt className="text-[10px]" />{place.ticketPricing}
                         </span>
                       )}
-
-                      {place.rating && (
-                        <span className="flex items-center gap-1">
-                          <FaStar className="text-yellow-500" />
-                          {place.rating}
-                        </span>
-                      )}
-
-                      {place.geoCoordinates?.latitude &&
-                        place.geoCoordinates?.longitude && (
-                          <span className="flex items-center gap-1">
-                            <FaMapMarkerAlt className="text-red-500" />
-                            <span className="text-xs">
-                              {place.geoCoordinates.latitude.toFixed(4)},{" "}
-                              {place.geoCoordinates.longitude.toFixed(4)}
-                            </span>
-                          </span>
-                        )}
                     </div>
                   </div>
                 </div>
               ))}
-
-              {/* Map for this day's places */}
-              {day.plan.some((place) => placeCoords[place.placeName]) && (
-                <div className="col-span-1 sm:col-span-2 lg:col-span-3 mt-4">
-                  <MapComponent
-                    center={
-                      placeCoords[day.plan[0]?.placeName] || [51.505, -0.09]
-                    }
-                    zoom={13}
-                    markers={day.plan.map((place) => ({
-                      position: placeCoords[place.placeName] || [0, 0],
-                      label: place.placeName,
-                      description: place.placeDetails,
-                    }))}
-                    height="300px"
-                  />
-                </div>
-              )}
             </div>
           </div>
         ))}

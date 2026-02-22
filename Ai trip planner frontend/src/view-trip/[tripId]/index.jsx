@@ -20,23 +20,23 @@ function Viewtrip() {
           `https://tripify-ai-backend.onrender.com/trip/view-trip/${tripId}`,
         );
         setTripData(tripDetails.data);
-        console.log("data fetched.", tripDetails.data);
       } catch (e) {
         toast("Can't fetch trip-details.");
       }
     };
-
     fetchTrip();
   }, [tripId]);
 
   return (
     <>
       <Header />
-      <div className="p-10 md:px-20 lg:px-44 xl:px-56">
-        <InformationSection trip={tripData} />
-        <Hotels trip={tripData} />
-        <PlacesToVisit trip={tripData} />
-      </div>
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50/30 pt-20">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <InformationSection trip={tripData} />
+          <Hotels trip={tripData} />
+          <PlacesToVisit trip={tripData} />
+        </div>
+      </main>
     </>
   );
 }
