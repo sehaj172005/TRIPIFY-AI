@@ -54,10 +54,12 @@ function Createtrip() {
     if (formData?.NoofDays > 7) {
       toast("No. of Days can't be more than 6.");
       setLoading(false);
+      setTripLoadingDialog(false);
       return;
     } else if (!formData.NoofDays || !formData.location || !formData.Budget || !formData.traveler) {
       toast("Please fill all the details.");
       setLoading(false);
+      setTripLoadingDialog(false);
       return;
     }
 
@@ -84,7 +86,8 @@ function Createtrip() {
       );
       Navigate("/view-trip/" + res.data._id);
     } catch (e) {
-      toast.error("There was an error generating trip.");
+      console.error("Trip generation error:", e?.message || e);
+      toast.error("There was an error generating trip. Please try again.");
     } finally {
       setLoading(false);
       setTripLoadingDialog(false);
