@@ -1,34 +1,124 @@
-import React, { useEffect, useState } from "react";
-import placeHolder from "../images/placeholder.jpg";
-import { getUnsplashImages } from "../../services/UnsplashApi";
-import { Hotel as HotelIcon, Star, MapPin, DollarSign, ExternalLink } from "lucide-react";
+import React from "react";
+import { Hotel as HotelIcon, Star, MapPin, DollarSign, ExternalLink, Wifi, Coffee, Car } from "lucide-react";
 
-function Hotels({ trip }) {
-  const [hotelPhotos, setHotelPhotos] = useState({});
+// Rotating gradient combos for card accents
+const cardGradients = [
+  "from-sky-400 to-blue-600",
+  "from-teal-400 to-emerald-600",
+  "from-violet-400 to-purple-600",
+  "from-orange-400 to-rose-500",
+  "from-pink-400 to-fuchsia-600",
+  "from-amber-400 to-orange-500",
+];
 
-  const openGoogleMaps = (hotelName, hotelAddress) => {
-    const query = `${hotelName} ${hotelAddress}`;
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-    window.open(mapsUrl, "_blank");
+const amenityIcons = [
+  { icon: <Wifi className="w-3.5 h-3.5" />, label: "Free WiFi" },
+  { icon: <Coffee className="w-3.5 h-3.5" />, label: "Breakfast" },
+  { icon: <Car className="w-3.5 h-3.5" />, label: "Parking" },
+];
+
+function HotelCard({ hotel, index }) {
+  const gradient = cardGradients[index % cardGradients.length];
+
+  const openGoogleMaps = () => {
+    const query = `${hotel.hotelName} ${hotel.hotelAddress}`;
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
+      "_blank"
+    );
   };
 
-  useEffect(() => {
-    const fetchAllHotelPhotos = async () => {
-      if (!trip?.Tripdata?.hotelOptions) return;
-      const hotelNames = trip.Tripdata.hotelOptions.map((h) => h.hotelName);
-      try {
-        const photoMap = await getUnsplashImages(hotelNames, {
-          type: "hotel",
-          location: trip.userSelection?.location || "",
-        });
-        setHotelPhotos(photoMap);
-      } catch (error) {
-        console.error("❌ Error fetching hotel photos:", error.message);
-      }
-    };
-    fetchAllHotelPhotos();
-  }, [trip]);
+  return (
+    <div
+      onClick={openGoogleMaps}
+      className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm card-hover cursor-pointer flex flex-col"
+    >
+      {/* Decorative header band */}
+      <div className={`relative bg-gradient-to-br ${gradient} h-36 flex items-center justify-center overflow-hidden`}>
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        {/* Decorative circles */}
+        <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
+        <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-white/10" />
 
+        {/* Hotel icon */}
+        <div className="relative flex flex-col items-center gap-2">
+          <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30 shadow-lg">
+            <HotelIcon className="w-7 h-7 text-white" />
+          </div>
+          {/* Rating badge */}
+          {hotel?.rating && (
+            <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/30">
+              <Star className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
+              <span className="text-white text-xs font-bold">{hotel.rating}</span>
+            </div>
+          )}
+        </div>
+
+        {/* "Open Maps" hover badge */}
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
+          <span className="flex items-center gap-1 bg-white/90 text-gray-700 text-xs font-medium px-2.5 py-1.5 rounded-full shadow">
+            <ExternalLink className="w-3 h-3" />
+            Maps
+          </span>
+        </div>
+      </div>
+
+      {/* Card body */}
+      <div className="p-4 flex flex-col flex-1 gap-3">
+        {/* Name */}
+        <div>
+          <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-1">
+            {hotel?.hotelName}
+          </h3>
+          <p className="text-xs text-gray-400 flex items-start gap-1 mt-1 line-clamp-2">
+            <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+            {hotel?.hotelAddress}
+          </p>
+        </div>
+
+        {/* Description */}
+        {hotel?.description && (
+          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+            {hotel.description}
+          </p>
+        )}
+
+        {/* Amenity pills */}
+        <div className="flex flex-wrap gap-1.5">
+          {amenityIcons.map((a, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-1 text-[11px] bg-gray-50 text-gray-500 border border-gray-100 px-2 py-1 rounded-full"
+            >
+              {a.icon} {a.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Price row */}
+        <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
+          <div>
+            <span className={`text-base font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
+              {hotel?.price}
+            </span>
+            <span className="text-xs text-gray-400 ml-1">/ night</span>
+          </div>
+          <button className={`text-xs font-semibold bg-gradient-to-r ${gradient} text-white px-3 py-1.5 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity`}>
+            View →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Hotels({ trip }) {
   return (
     <div className="my-10 animate-fade-in">
       <div className="flex items-center gap-3 mb-6">
@@ -43,46 +133,7 @@ function Hotels({ trip }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {trip?.Tripdata?.hotelOptions?.map((hotel, index) => (
-          <div
-            key={index}
-            onClick={() => openGoogleMaps(hotel.hotelName, hotel.hotelAddress)}
-            className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm card-hover cursor-pointer"
-          >
-            <div className="relative overflow-hidden h-52">
-              <img
-                src={hotelPhotos[hotel.hotelName] || placeHolder}
-                alt={hotel.hotelName}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-                <span className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-3 py-1.5 rounded-full shadow-md">
-                  <ExternalLink className="w-3 h-3" />
-                  View on Maps
-                </span>
-              </div>
-              {hotel?.rating && (
-                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-full flex items-center gap-1 text-xs font-semibold shadow-md">
-                  <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                  {hotel.rating}
-                </div>
-              )}
-            </div>
-            <div className="p-4">
-              <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1 line-clamp-1">{hotel?.hotelName}</h3>
-              <p className="text-xs text-gray-400 flex items-start gap-1 mb-3 line-clamp-2">
-                <MapPin className="w-3 h-3 mt-0.5 shrink-0 text-gray-300" />
-                {hotel?.hotelAddress}
-              </p>
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1 text-sm font-semibold text-sky-600">
-                  <DollarSign className="w-4 h-4" />
-                  {hotel?.price}
-                </span>
-                <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">per night</span>
-              </div>
-            </div>
-          </div>
+          <HotelCard key={index} hotel={hotel} index={index} />
         ))}
       </div>
     </div>

@@ -156,8 +156,12 @@ function Createtrip() {
                 <Sparkles className="w-8 h-8 text-white animate-spin-slow" />
               </div>
             </div>
+            <div className="sr-only">
+              <DialogTitle>Generating your trip</DialogTitle>
+              <DialogDescription>Our AI is building your personalized itinerary. This takes 30–60 seconds.</DialogDescription>
+            </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Crafting your trip...</h3>
+              <p className="text-xl font-bold text-gray-900 mb-2">Crafting your trip...</p>
               <p className="text-gray-500 text-sm">Our AI is building your personalized itinerary. This takes 30–60 seconds.</p>
             </div>
             {/* Animated dots */}

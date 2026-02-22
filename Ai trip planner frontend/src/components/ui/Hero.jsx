@@ -43,11 +43,9 @@ function Hero() {
         </div>
 
         {/* Headline */}
-        <h1 className="animate-fade-up-delay-1 font-bold text-5xl sm:text-6xl md:text-7xl leading-[1.08] tracking-tight text-gray-900 mb-6">
+        <h1 className="animate-fade-up-delay-1 font-bold text-5xl sm:text-6xl md:text-7xl leading-[1.1] tracking-tight text-gray-900 mb-6 text-left sm:text-center">
           Your dream trip,{" "}
-          <br className="hidden sm:block" />
-          <span className="gradient-text">planned by AI</span>
-          <br className="hidden sm:block" />
+          <span className="gradient-text">planned by AI</span>{" "}
           in seconds.
         </h1>
 
